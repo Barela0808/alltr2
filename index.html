@@ -9,78 +9,106 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background: #f0f0f0;
+      background: #f7f7f7;
     }
     header {
       background: #4CAF50;
       color: white;
-      padding: 1rem;
+      padding: 15px;
       text-align: center;
     }
     .container {
+      max-width: 850px;
+      margin: 20px auto;
       padding: 20px;
-      max-width: 800px;
-      margin: auto;
-      background: white;
+      background: #fff;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    input, button, textarea {
+    h2 {
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 5px;
+    }
+    label, input, button, textarea {
+      display: block;
       width: 100%;
-      padding: 10px;
       margin-top: 10px;
+      padding: 10px;
       box-sizing: border-box;
+    }
+    input[type="file"] {
+      padding: 3px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .row div {
+      flex: 1;
+    }
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      background: #eee;
+      padding: 10px;
+      margin-top: 20px;
     }
     table {
       width: 100%;
       margin-top: 20px;
       border-collapse: collapse;
     }
-    table, th, td {
-      border: 1px solid #ccc;
-    }
     th, td {
       padding: 10px;
-      text-align: left;
+      border: 1px solid #ccc;
     }
-    .stats {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
     }
     .edit-btn, .delete-btn {
-      cursor: pointer;
       padding: 5px 10px;
-      margin: 0 5px;
+      margin-right: 5px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>Auto Expense Tracker</h1>
+    <h1>Expense Tracker</h1>
   </header>
   <div class="container">
 
-    <label>Enter Amount:</label>
-    <input type="number" id="balance-amount" placeholder="Enter amount">
+    <h2>Add Balance</h2>
+    <input type="number" id="add-balance" placeholder="Enter amount to add to balance">
     <button onclick="addToBalance()">Add Balance</button>
-    <button onclick="editBalance()">Edit Balance</button>
-
-    <label>Upload Screenshot:</label>
-    <input type="file" id="screenshot" accept="image/*">
-
-    <label>Product Name (optional):</label>
-    <input type="text" id="product-name">
-
-    <label>Website Link (optional):</label>
-    <input type="url" id="website-link">
-
-    <button onclick="addExpenseFromImage()">Submit Screenshot</button>
 
     <div class="stats">
       <div><strong>Total Spent:</strong> ₹<span id="total-spent">0</span></div>
-      <div><strong>Balance:</strong> ₹<span id="current-balance">0</span></div>
+      <div><strong>Balance Left:</strong> ₹<span id="current-balance">0</span></div>
     </div>
 
+    <h2>online</h2>
+    <input type="file" id="screenshot" accept="image/*">
+    <input type="text" id="product-name" placeholder="Product Name (optional)">
+    <input type="url" id="website-link" placeholder="Website Link (optional)">
+    <button onclick="addExpenseFromImage()">Submit Screenshot Payment</button>
+
+    <h2>Cash payment</h2>
+    <input type="number" id="cash-amount" placeholder="Enter cash amount">
+    <input type="text" id="cash-paid-to" placeholder="Paid To">
+    <input type="datetime-local" id="cash-datetime">
+    <input type="text" id="cash-product" placeholder="Product Name (optional)">
+    <input type="url" id="cash-website" placeholder="Website Link (optional)">
+    <button onclick="addCashPayment()">Submit Cash Payment</button>
+
+    <h2>All Transactions</h2>
     <table>
       <thead>
         <tr>
@@ -99,18 +127,28 @@
   </div>
 
   <script>
-    let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
-    let balance = Number(localStorage.getItem('balance')) || 0;
+    let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+    let balance = Number(localStorage.getItem("balance")) || 0;
+
+    function addToBalance() {
+      const amt = Number(document.getElementById("add-balance").value);
+      if (!isNaN(amt) && amt > 0) {
+        balance += amt;
+        localStorage.setItem("balance", balance);
+        updateStats();
+        document.getElementById("add-balance").value = '';
+      }
+    }
 
     function updateStats() {
-      const totalSpent = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
-      document.getElementById('total-spent').innerText = totalSpent;
-      document.getElementById('current-balance').innerText = balance - totalSpent;
+      const total = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+      document.getElementById("total-spent").innerText = total.toFixed(2);
+      document.getElementById("current-balance").innerText = (balance - total).toFixed(2);
     }
 
     function renderTable() {
-      const tbody = document.getElementById('expense-table');
-      tbody.innerHTML = '';
+      const tbody = document.getElementById("expense-table");
+      tbody.innerHTML = "";
       expenses.forEach((exp, idx) => {
         tbody.innerHTML += `
           <tr>
@@ -131,58 +169,70 @@
 
     function deleteExpense(index) {
       expenses.splice(index, 1);
-      localStorage.setItem('expenses', JSON.stringify(expenses));
+      localStorage.setItem("expenses", JSON.stringify(expenses));
       renderTable();
     }
 
     function editExpense(index) {
       const exp = expenses[index];
-      document.getElementById('product-name').value = exp.product;
-      document.getElementById('website-link').value = exp.website;
+      document.getElementById("cash-amount").value = exp.amount;
+      document.getElementById("cash-paid-to").value = exp.paidTo;
+      document.getElementById("cash-product").value = exp.product;
+      document.getElementById("cash-website").value = exp.website;
       deleteExpense(index);
     }
 
     function addExpenseFromImage() {
-      // Dummy extracted data
       const amount = 581;
-      const paidTo = 'EKART';
-      const date = '11 Apr 2025, 1:01 PM';
-      const transactionId = '510111131658';
-
-      const product = document.getElementById('product-name').value || '-';
-      const website = document.getElementById('website-link').value || '-';
+      const paidTo = "EKART";
+      const date = new Date().toLocaleString();
+      const transactionId = "510111131658";
+      const product = document.getElementById("product-name").value || "-";
+      const website = document.getElementById("website-link").value || "-";
 
       const newExp = { amount, paidTo, date, transactionId, product, website };
       expenses.push(newExp);
-      localStorage.setItem('expenses', JSON.stringify(expenses));
+      localStorage.setItem("expenses", JSON.stringify(expenses));
       renderTable();
     }
 
-    function addToBalance() {
-      const amount = Number(document.getElementById('balance-amount').value);
-      if (!isNaN(amount) && amount > 0) {
-        balance += amount;
-        localStorage.setItem('balance', balance);
-        updateStats();
-        alert("Balance added successfully!");
-      } else {
-        alert("Please enter a valid amount to add.");
+    function addCashPayment() {
+      const amount = Number(document.getElementById("cash-amount").value);
+      const paidTo = document.getElementById("cash-paid-to").value;
+      let date = document.getElementById("cash-datetime").value;
+      const product = document.getElementById("cash-product").value || "-";
+      const website = document.getElementById("cash-website").value || "-";
+
+      if (!amount || !paidTo) {
+        alert("Amount and Paid To are required.");
+        return;
       }
+
+      if (!date) {
+        date = new Date().toLocaleString();
+      }
+
+      const newExp = {
+        amount,
+        paidTo,
+        date,
+        transactionId: "CASH",
+        product,
+        website
+      };
+
+      expenses.push(newExp);
+      localStorage.setItem("expenses", JSON.stringify(expenses));
+      renderTable();
     }
 
-    function editBalance() {
-      const amount = Number(document.getElementById('balance-amount').value);
-      if (!isNaN(amount) && amount >= 0) {
-        balance = amount;
-        localStorage.setItem('balance', balance);
-        updateStats();
-        alert("Balance updated successfully!");
-      } else {
-        alert("Please enter a valid amount to set.");
-      }
-    }
-
-    window.onload = renderTable;
+    // Set default datetime
+    window.onload = () => {
+      renderTable();
+      const now = new Date();
+      const iso = now.toISOString().slice(0, 16);
+      document.getElementById("cash-datetime").value = iso;
+    };
   </script>
 </body>
 </html>
