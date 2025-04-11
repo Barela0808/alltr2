@@ -24,7 +24,7 @@
       background: white;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    input, button {
+    input, button, textarea {
       width: 100%;
       padding: 10px;
       margin-top: 10px;
@@ -59,9 +59,11 @@
     <h1>Auto Expense Tracker</h1>
   </header>
   <div class="container">
-    <label>Initial Balance:</label>
-    <input type="number" id="initial-balance" placeholder="Enter initial balance">
-    <button onclick="setInitialBalance()">Set Balance</button>
+
+    <label>Enter Amount:</label>
+    <input type="number" id="balance-amount" placeholder="Enter amount">
+    <button onclick="addToBalance()">Add Balance</button>
+    <button onclick="editBalance()">Edit Balance</button>
 
     <label>Upload Screenshot:</label>
     <input type="file" id="screenshot" accept="image/*">
@@ -93,18 +95,12 @@
       </thead>
       <tbody id="expense-table"></tbody>
     </table>
+
   </div>
 
   <script>
     let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
     let balance = Number(localStorage.getItem('balance')) || 0;
-    let editingIndex = null;
-
-    function setInitialBalance() {
-      balance = Number(document.getElementById('initial-balance').value);
-      localStorage.setItem('balance', balance);
-      updateStats();
-    }
 
     function updateStats() {
       const totalSpent = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
@@ -143,31 +139,47 @@
       const exp = expenses[index];
       document.getElementById('product-name').value = exp.product;
       document.getElementById('website-link').value = exp.website;
-
-      // Adjust balance temporarily by removing the old expense
-      balance += Number(exp.amount);
-      expenses.splice(index, 1);
-      localStorage.setItem('balance', balance);
-      localStorage.setItem('expenses', JSON.stringify(expenses));
-      renderTable();
+      deleteExpense(index);
     }
 
     function addExpenseFromImage() {
+      // Dummy extracted data
       const amount = 581;
       const paidTo = 'EKART';
       const date = '11 Apr 2025, 1:01 PM';
       const transactionId = '510111131658';
+
       const product = document.getElementById('product-name').value || '-';
       const website = document.getElementById('website-link').value || '-';
 
       const newExp = { amount, paidTo, date, transactionId, product, website };
       expenses.push(newExp);
-      balance -= Number(amount);
       localStorage.setItem('expenses', JSON.stringify(expenses));
-      localStorage.setItem('balance', balance);
-      document.getElementById('product-name').value = '';
-      document.getElementById('website-link').value = '';
       renderTable();
+    }
+
+    function addToBalance() {
+      const amount = Number(document.getElementById('balance-amount').value);
+      if (!isNaN(amount) && amount > 0) {
+        balance += amount;
+        localStorage.setItem('balance', balance);
+        updateStats();
+        alert("Balance added successfully!");
+      } else {
+        alert("Please enter a valid amount to add.");
+      }
+    }
+
+    function editBalance() {
+      const amount = Number(document.getElementById('balance-amount').value);
+      if (!isNaN(amount) && amount >= 0) {
+        balance = amount;
+        localStorage.setItem('balance', balance);
+        updateStats();
+        alert("Balance updated successfully!");
+      } else {
+        alert("Please enter a valid amount to set.");
+      }
     }
 
     window.onload = renderTable;
