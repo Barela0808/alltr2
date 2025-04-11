@@ -1,7 +1,8 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Expense Tracker</title>
   <style>
     body {
@@ -23,7 +24,7 @@
       background: white;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    input, button, textarea {
+    input, button {
       width: 100%;
       padding: 10px;
       margin-top: 10px;
@@ -60,41 +61,44 @@
   <div class="container">
     <label>Initial Balance:</label>
     <input type="number" id="initial-balance" placeholder="Enter initial balance">
-    <button onclick="setInitialBalance()">Set Balance</button><label>Upload Screenshot:</label>
-<input type="file" id="screenshot" accept="image/*">
+    <button onclick="setInitialBalance()">Set Balance</button>
 
-<label>Product Name (optional):</label>
-<input type="text" id="product-name">
+    <label>Upload Screenshot:</label>
+    <input type="file" id="screenshot" accept="image/*">
 
-<label>Website Link (optional):</label>
-<input type="url" id="website-link">
+    <label>Product Name (optional):</label>
+    <input type="text" id="product-name">
 
-<button onclick="addExpenseFromImage()">Submit Screenshot</button>
+    <label>Website Link (optional):</label>
+    <input type="url" id="website-link">
 
-<div class="stats">
-  <div><strong>Total Spent:</strong> ₹<span id="total-spent">0</span></div>
-  <div><strong>Balance:</strong> ₹<span id="current-balance">0</span></div>
-</div>
+    <button onclick="addExpenseFromImage()">Submit Screenshot</button>
 
-<table>
-  <thead>
-    <tr>
-      <th>Amount</th>
-      <th>Paid To</th>
-      <th>Date & Time</th>
-      <th>Transaction ID</th>
-      <th>Product</th>
-      <th>Website</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody id="expense-table">
-  </tbody>
-</table>
+    <div class="stats">
+      <div><strong>Total Spent:</strong> ₹<span id="total-spent">0</span></div>
+      <div><strong>Balance:</strong> ₹<span id="current-balance">0</span></div>
+    </div>
 
-  </div>  <script>
+    <table>
+      <thead>
+        <tr>
+          <th>Amount</th>
+          <th>Paid To</th>
+          <th>Date & Time</th>
+          <th>Transaction ID</th>
+          <th>Product</th>
+          <th>Website</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="expense-table"></tbody>
+    </table>
+  </div>
+
+  <script>
     let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
     let balance = Number(localStorage.getItem('balance')) || 0;
+    let editingIndex = null;
 
     function setInitialBalance() {
       balance = Number(document.getElementById('initial-balance').value);
@@ -139,26 +143,34 @@
       const exp = expenses[index];
       document.getElementById('product-name').value = exp.product;
       document.getElementById('website-link').value = exp.website;
-      deleteExpense(index);
+
+      // Adjust balance temporarily by removing the old expense
+      balance += Number(exp.amount);
+      expenses.splice(index, 1);
+      localStorage.setItem('balance', balance);
+      localStorage.setItem('expenses', JSON.stringify(expenses));
+      renderTable();
     }
 
     function addExpenseFromImage() {
-      // Dummy extracted data from your screenshot
       const amount = 581;
       const paidTo = 'EKART';
       const date = '11 Apr 2025, 1:01 PM';
       const transactionId = '510111131658';
-
       const product = document.getElementById('product-name').value || '-';
       const website = document.getElementById('website-link').value || '-';
 
       const newExp = { amount, paidTo, date, transactionId, product, website };
       expenses.push(newExp);
+      balance -= Number(amount);
       localStorage.setItem('expenses', JSON.stringify(expenses));
+      localStorage.setItem('balance', balance);
+      document.getElementById('product-name').value = '';
+      document.getElementById('website-link').value = '';
       renderTable();
     }
 
-    // Init on load
     window.onload = renderTable;
-  </script></body>
+  </script>
+</body>
 </html>
